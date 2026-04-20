@@ -7,6 +7,7 @@ Django news site with posts, comments, likes, pagination, media uploads, search,
 - Python 3.12
 - Django 6.0
 - SQLite for local development
+- PostgreSQL on Render when `DATABASE_URL` is configured
 - Django Templates
 - HTML/CSS with minimal JavaScript
 
@@ -39,14 +40,6 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Create local environment file:
-
-```bash
-cp .env.example .env
-```
-
-For local development, the defaults in `.env.example` are enough. For production, change `DJANGO_SECRET_KEY`, set `DJANGO_DEBUG=False`, and configure `DJANGO_ALLOWED_HOSTS`.
-
 Apply migrations:
 
 ```bash
@@ -76,9 +69,33 @@ Open:
 python manage.py test
 ```
 
+## Render Deploy
+
+Root Directory: leave this field empty. The project root already contains `manage.py`.
+
+Build Command:
+
+```bash
+./build.sh
+```
+
+Start Command:
+
+```bash
+python -m gunicorn news_site.asgi:application -k uvicorn.workers.UvicornWorker
+```
+
+Optional but recommended: create a Render PostgreSQL database and add its Internal Database URL as `DATABASE_URL` in the web service environment variables.
+
+For uploaded images and videos, add a Render Persistent Disk mounted at:
+
+```text
+/opt/render/project/src/media
+```
+
 ## Git Notes
 
-The repository should include source code, templates, static assets, migrations, `requirements.txt`, `.env.example`, and this README.
+The repository should include source code, templates, static assets, migrations, `requirements.txt`, `build.sh`, and this README.
 
 The repository should not include:
 
