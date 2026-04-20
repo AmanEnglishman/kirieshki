@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Все новости{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <p class="eyebrow">Лента</p>
+    <h1>Последние новости</h1>
+</section>
+
+<form class="filters-form" method="get">
+    <label class="sr-only" for="search">Поиск по постам</label>
+    <input id="search" name="q" type="search" value="{{ search_query }}" placeholder="Поиск по заголовку или тексту">
+
+    <label class="sr-only" for="category">Категория</label>
+    <select id="category" name="category">
+        <option value="">Все категории</option>
+        {% for value, label in categories %}
+            <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+
+    <button class="button" type="submit">Найти</button>
+    {% if search_query or selected_category %}
+        <a class="button button-light" href="{% url 'posts:list' %}">Сбросить</a>
+    {% endif %}
+</form>
+
+{% if page_obj.object_list %}
+    <section class="post-grid">
+        {% for post in page_obj %}
+            <article class="post-card">
+                <a class="post-media" href="{% url 'posts:detail' post.pk %}" aria-label="Открыть {{ post.title }}">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+                    {% elif post.video_thumbnail %}
+                        <span class="video-badge">Видео</span>
+                        <img src="{{ post.video_thumbnail.url }}" alt="{{ post.title }}">
+                    {% elif post.video %}
+                        <div class="video-placeholder">
+                            <span class="play-icon" aria-hidden="true"></span>
+                            <span>Видео</span>
+                        </div>
+                    {% else %}
+                        <div class="text-placeholder">Новость</div>
+                    {% endif %}
+                </a>
+
+                <div class="post-card-body">
+                    <div class="card-labels">
+                        {% if post.is_pinned %}<span class="badge">Закреплено</span>{% endif %}
+                        <span class="badge badge-muted">{{ post.get_category_display }}</span>
+                    </div>
+                    <p class="post-date">{{ post.created_at|date:"d.m.Y H:i" }}</p>
+                    <h2><a href="{% url 'posts:detail' post.pk %}">{{ post.title }}</a></h2>
+                    <p class="post-preview">{{ post.content|truncatewords:28 }}</p>
+
+                    <div class="post-meta">
+                        <span>Лайков: {{ post.total_likes }}</span>
+                        <span>{{ post.total_comments }} коммент.</span>
+                        <span>{{ post.views_count }} просмотров</span>
+                    </div>
+
+                    <a class="button" href="{% url 'posts:detail' post.pk %}">Читать далее</a>
+                </div>
+            </article>
+        {% endfor %}
+    </section>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="Навигация по страницам">
+            {% if page_obj.has_previous %}
+                <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">Назад</a>
+            {% else %}
+                <span class="disabled">Назад</span>
+            {% endif %}
+
+            {% for page_number in page_obj.paginator.page_range %}
+                {% if page_number == page_obj.number %}
+                    <span class="current">{{ page_number }}</span>
+                {% else %}
+                    <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">Вперед</a>
+            {% else %}
+                <span class="disabled">Вперед</span>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="empty-state empty-panel">
+        <h2>Ничего не найдено</h2>
+        <p>Попробуйте изменить поиск или выбрать другую категорию.</p>
+    </div>
+{% endif %}
+{% endblock %}

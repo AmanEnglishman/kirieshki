@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<article class="post-detail">
+    <a class="back-link" href="{% url 'posts:list' %}">Назад к ленте</a>
+
+    <header class="detail-head">
+        <div class="card-labels">
+            {% if post.is_pinned %}<span class="badge">Закреплено</span>{% endif %}
+            <span class="badge badge-muted">{{ post.get_category_display }}</span>
+        </div>
+        <p class="post-date">{{ post.created_at|date:"d.m.Y H:i" }}</p>
+        {% if was_updated %}
+            <p class="post-date">Обновлено: {{ post.updated_at|date:"d.m.Y H:i" }}</p>
+        {% endif %}
+        <h1>{{ post.title }}</h1>
+        <div class="post-meta">
+            <span>Лайков: <span data-like-count>{{ post.total_likes }}</span></span>
+            <span>Комментариев: {{ post.total_comments }}</span>
+            <span>{{ post.views_count }} просмотров</span>
+        </div>
+    </header>
+
+    {% if post.image %}
+        <img class="detail-image" src="{{ post.image.url }}" alt="{{ post.title }}">
+    {% endif %}
+
+    {% if post.video %}
+        <video class="detail-video" controls preload="metadata">
+            <source src="{{ post.video.url }}">
+            Ваш браузер не поддерживает видео.
+        </video>
+    {% endif %}
+
+    <div class="post-content">
+        {{ post.content|linebreaks }}
+    </div>
+
+    <form class="like-form" method="post" action="{% url 'posts:toggle_like' post.pk %}" data-like-form>
+        {% csrf_token %}
+        <button class="button button-secondary" type="submit" data-like-button>
+            {% if liked_by_user %}Убрать лайк{% else %}Поставить лайк{% endif %}
+        </button>
+        <span class="like-status" data-like-status aria-live="polite"></span>
+    </form>
+</article>
+
+<section class="comments-section">
+    <h2>Комментарии</h2>
+
+    <form class="comment-form" method="post" action="{% url 'posts:add_comment' post.pk %}">
+        {% csrf_token %}
+        <label for="author_name">Имя</label>
+        <input id="author_name" name="author_name" type="text" maxlength="100" placeholder="Аноним">
+
+        <label for="content">Комментарий</label>
+        <textarea id="content" name="content" rows="5" required placeholder="Напишите комментарий"></textarea>
+
+        <button class="button" type="submit">Отправить</button>
+    </form>
+
+    <div class="comments-list">
+        {% for comment in comments %}
+            <article class="comment">
+                <div class="comment-head">
+                    <strong>{{ comment.author_name }}</strong>
+                    <span>{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <p>{{ comment.content|linebreaksbr }}</p>
+            </article>
+        {% empty %}
+            <div class="empty-state empty-panel">
+                <h3>Комментариев пока нет</h3>
+                <p>Будьте первым.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% if related_posts %}
+    <section class="related-section">
+        <h2>Похожие новости</h2>
+        <div class="related-grid">
+            {% for related_post in related_posts %}
+                <article class="related-card">
+                    <p class="post-date">{{ related_post.get_category_display }}</p>
+                    <h3><a href="{% url 'posts:detail' related_post.pk %}">{{ related_post.title }}</a></h3>
+                    <p>{{ related_post.content|truncatewords:16 }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {% load static %}
+    <script src="{% static 'js/likes.js' %}"></script>
+{% endblock %}
